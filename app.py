@@ -47,9 +47,11 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 # ----------------- Utility helpers -----------------
 
 def allowed_file(filename, allowed_set):
+    """Check if the file is allowed based on its extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
 
 def init_db():
+    """Initialize the database and create necessary tables."""
     conn = sqlite3.connect(os.path.join(APP_ROOT, 'users.db'))
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -80,7 +82,8 @@ init_db()
 print('Loading models...')
 
 def check_tensorflow_version():
-    """Check TensorFlow version and compatibility"""
+    """Check TensorFlow and Python versions, and verify model file existence and
+    sizes."""
     print(f"\n🔧 TensorFlow Version: {tf.__version__}")
     print(f"🔧 Python Version: {os.sys.version}")
     
@@ -239,7 +242,7 @@ if audio_model:
 # ----------------- Grad-CAM helpers -----------------
 
 def get_img_array(img_path, target_size=(224, 224)):
-    """Load and preprocess image for model prediction"""
+    """Load and preprocess an image for model prediction."""
     img = keras_image.load_img(img_path, target_size=target_size)
     array = keras_image.img_to_array(img)
     array = np.expand_dims(array, axis=0)
@@ -266,7 +269,7 @@ def find_conv_layer(model, layer_name=None):
     return None
 
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index=None):
-    """Generate Grad-CAM heatmap for image explanation"""
+    """Generate Grad-CAM heatmap for image explanation."""
     try:
         # Find appropriate convolutional layer
         conv_layer_name = find_conv_layer(model, last_conv_layer_name)
@@ -305,7 +308,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index
         return heatmap, "fallback"
 
 def save_and_overlay_gradcam(img_path, heatmap, cam_path, alpha=0.4):
-    """Save Grad-CAM visualization overlay"""
+    """Save Grad-CAM visualization overlay."""
     try:
         # Load original image
         img = cv2.imread(img_path)
@@ -347,7 +350,7 @@ def save_and_overlay_gradcam(img_path, heatmap, cam_path, alpha=0.4):
 # ----------------- Feature extraction for audio -----------------
 
 def extract_features(path, max_pad_length=100):
-    """Extract MFCC features from audio file"""
+    """Extract MFCC features from an audio file."""
     try:
         sig, sr = librosa.load(path, sr=22050)
         mfccs = librosa.feature.mfcc(y=sig, sr=sr, n_mfcc=40)
@@ -431,7 +434,25 @@ def predict_with_fixed_scaling(model, scaler, feature_columns, patient_data):
     return prediction, alzheimers_prob, probability, features, original_feature_values
 
 def analyze_shap_factors(shap_values, feature_names, feature_values, top_n=5):
-    """Enhanced SHAP analysis to identify specific risk factors for Alzheimer's - FIXED VERSION"""
+    """Analyze SHAP factors to identify risk factors for Alzheimer's.
+    
+    This function processes SHAP values to determine the impact of various features
+    on the risk of Alzheimer's. It handles different formats of SHAP values,
+    ensures proper array shapes, and extracts the top contributing features based
+    on their impact. Additionally, it generates clinical insights by leveraging the
+    `generate_shap_insights` function to summarize risk-increasing and risk-
+    decreasing factors.
+    
+    Args:
+        shap_values (list or np.ndarray): The SHAP values for the features.
+        feature_names (list): The names of the features corresponding to the SHAP values.
+        feature_values (list or np.ndarray): The values of the features.
+        top_n (int?): The number of top contributing factors to return. Defaults to 5.
+    
+    Returns:
+        tuple: A tuple containing a list of the top contributing factors and clinical
+            insights.
+    """
     if shap_values is None or len(shap_values) == 0:
         return [], "Insufficient data for detailed analysis"
     
@@ -501,7 +522,27 @@ def analyze_shap_factors(shap_values, feature_names, feature_values, top_n=5):
         return [], "Analysis limited due to technical constraints"
 
 def generate_shap_insights(risk_increasing, risk_decreasing, feature_values, feature_names):
-    """Generate specific clinical insights from SHAP analysis"""
+    """Generate specific clinical insights from SHAP analysis.
+    
+    This function analyzes risk-increasing and risk-decreasing factors based on
+    SHAP values to generate clinical insights. It evaluates various features such
+    as age, MMSE score, CDR score, and others to identify significant risk factors,
+    while also considering protective factors like education and physical activity.
+    The insights are compiled into a list and returned as a formatted string.
+    
+    Args:
+        risk_increasing (list): A list of dictionaries containing risk-increasing factors with 'feature',
+            'raw_impact', and 'value'.
+        risk_decreasing (list): A list of dictionaries containing risk-decreasing factors with 'feature' and
+            'value'.
+        feature_values (list): A list of values corresponding to the features (not used in the current
+            implementation).
+        feature_names (list): A list of names corresponding to the features (not used in the current
+            implementation).
+    
+    Returns:
+        str: A string summarizing the clinical insights based on the provided factors.
+    """
     insights = []
     
     # Analyze top risk-increasing factors
@@ -580,7 +621,23 @@ def generate_shap_insights(risk_increasing, risk_decreasing, feature_values, fea
     return "\n".join(insights) if insights else "Standard risk profile based on demographic and clinical factors"
 
 def create_text_analysis_plots(feature_values, feature_names, shap_values, patient_id):
-    """Create simplified text analysis visualizations - FIXED VERSION"""
+    """Create simplified text analysis visualizations.
+    
+    This function generates visualizations for text analysis by creating a bar plot
+    of the top features based on their SHAP values. It handles the input SHAP
+    values format, ensures the arrays are compatible, and extracts the most
+    impactful features. The resulting plot is saved as a PNG file in the specified
+    directory, and any errors during the process are caught and reported.
+    
+    Args:
+        feature_values (array-like): The values of the features to be analyzed.
+        feature_names (list): The names of the features corresponding to the values.
+        shap_values (array-like or list): The SHAP values for the features, which can be in various formats.
+        patient_id (str): The identifier for the patient, used in the output file name.
+    
+    Returns:
+        list: A list of file names for the generated plots.
+    """
     plot_files = []
     
     try:
@@ -643,7 +700,7 @@ def create_text_analysis_plots(feature_values, feature_names, shap_values, patie
 # ----------------- Clinical Report Helpers -----------------
 
 def get_risk_color(score):
-    """Return color based on risk score"""
+    """Return color based on risk score."""
     if score >= 0.7:
         return '🔴'  # High risk
     elif score >= 0.4:
@@ -652,7 +709,21 @@ def get_risk_color(score):
         return '🟢'  # Low risk
 
 def get_top_shap_features(shap_values, feature_names, feature_values=None, top_n=5):
-    """Extract top N features from SHAP values with descriptions and risk factors"""
+    """Extract top N features from SHAP values with descriptions and risk factors.
+    
+    This function computes the mean absolute SHAP values for each feature and
+    identifies the top N features based on their impact. It retrieves associated
+    descriptions and risk factors for each feature, providing a comprehensive
+    overview of the most influential factors in the context of Alzheimer risk.
+    
+    Args:
+        shap_values: The SHAP values for the features, which can be a list or
+            a numpy array.
+        feature_names: A list of feature names corresponding to the SHAP values.
+        feature_values: Optional; a list of feature values for the current
+            instance.
+        top_n: The number of top features to return, default is 5.
+    """
     if shap_values is None or len(shap_values) == 0:
         return []
     
@@ -781,7 +852,18 @@ def get_top_shap_features(shap_values, feature_names, feature_values=None, top_n
     return top_features
 
 def generate_risk_factors_report(top_features, fusion_score, feature_dict):
-    """Generate detailed risk factors report with proper structure"""
+    """def generate_risk_factors_report(top_features, fusion_score, feature_dict):
+    Generate a detailed risk factors report with proper structure.  This function
+    analyzes the provided top features to identify high-impact  risk factors based
+    on their significance. It constructs a structured  report that includes the
+    feature name, impact value, and a clinical  description. Additionally, it
+    evaluates the fusion score to append  general risk factors, categorizing them
+    as critical or moderate based  on the score thresholds.
+    
+    Args:
+        top_features (list): A list of features with their impact values.
+        fusion_score (float): A score representing the overall risk assessment.
+        feature_dict (dict): A dictionary containing current values for features."""
     risk_factors = []
     
     # High impact features from SHAP - WITH PROPER STRUCTURE
@@ -827,7 +909,7 @@ def generate_risk_factors_report(top_features, fusion_score, feature_dict):
     return risk_factors
 
 def get_clinical_description(feature_name, value):
-    """Get clinical description for risk factors"""
+    """Get clinical description for a given risk factor."""
     descriptions = {
         'Age': f'Advanced age ({value} years) - strongest non-modifiable risk factor',
         'MMSE': f'Cognitive screening score ({value}) - lower scores indicate impairment',
@@ -844,9 +926,29 @@ def get_clinical_description(feature_name, value):
     return descriptions.get(feature_name, f'Clinical risk factor ({feature_name})')
 
 def generate_clinical_summary(fusion_score, text_pred, image_pred, audio_pred, top_features, shap_insights, feature_dict):
-    """Generate clinical summary based on predictions and risk factors"""
     
     # Base risk assessment
+    """Generate a clinical summary based on predictions and risk factors.
+    
+    This function assesses the fusion score to determine the probability of
+    Alzheimer's Disease and recommends appropriate actions. It incorporates
+    findings from text, imaging, and audio predictions, and identifies key risk
+    factors based on SHAP analysis. The final summary combines these insights to
+    provide a comprehensive clinical overview.
+    
+    Args:
+        fusion_score (float): The score indicating the likelihood of Alzheimer's Disease.
+        text_pred (str): Predictions based on text analysis.
+        image_pred (str): Predictions based on imaging results.
+        audio_pred (str): Predictions based on audio analysis.
+        top_features (list): A list of top risk factors derived from the analysis.
+        shap_insights (any): Insights from SHAP analysis (not used directly in summary).
+        feature_dict (dict): A dictionary containing feature values for risk assessment.
+    
+    Returns:
+        str: A comprehensive clinical summary based on the provided predictions and risk
+            factors.
+    """
     if fusion_score >= 0.7:
         base_summary = "HIGH PROBABILITY of Alzheimer's Disease. "
         urgency = "Urgent neurological evaluation recommended."
@@ -901,7 +1003,23 @@ def generate_clinical_summary(fusion_score, text_pred, image_pred, audio_pred, t
     return base_summary
 
 def generate_recommendations(fusion_score, risk_factors, shap_insights):
-    """Generate recommendations with robust error handling"""
+    """Generate recommendations based on fusion score and risk factors.
+    
+    This function generates a list of recommendations tailored to the patient's
+    fusion score, categorizing them into urgent, priority, or routine actions. It
+    also incorporates SHAP insights to provide additional recommendations based on
+    specific risk factors, ensuring robust error handling to maintain functionality
+    even when unexpected input is encountered.
+    
+    Args:
+        fusion_score (float): A score indicating the patient's condition severity.
+        risk_factors (list): A list of risk factors that may influence recommendations.
+        shap_insights (any): Insights derived from SHAP analysis, though not directly used in the current
+            logic.
+    
+    Returns:
+        list: A list of recommendations based on the provided fusion score and risk factors.
+    """
     rec = []
     
     # Risk-level based recommendations (always work)
@@ -952,6 +1070,7 @@ def home():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Handles user registration and stores credentials in the database."""
     if request.method == 'POST':
         uname = request.form['username']
         pwd = request.form['password']
@@ -970,6 +1089,15 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handle user login and session management.
+    
+    This function processes login requests by checking the provided username and
+    password against the  stored user credentials in the `users.db` database. It
+    manages user roles and session states,  redirecting users to the appropriate
+    dashboard or admin panel based on their access level.  If the account is
+    pending approval or the credentials are invalid, appropriate messages are
+    flashed  to the user, and they are redirected back to the login page.
+    """
     if request.method == 'POST':
         uname = request.form['username']
         pwd = request.form['password']
@@ -996,6 +1124,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Log out the user and redirect to the login page."""
     session.clear()
     flash('Logged out successfully.')
     return redirect(url_for('login'))
@@ -1048,6 +1177,7 @@ def analytics():
 
 @app.route('/dashboard')
 def dashboard():
+    """Render the dashboard page with user statistics."""
     if 'user' not in session:
         return redirect(url_for('login'))
     uname = session['user']
@@ -1088,6 +1218,7 @@ def admin_panel():
 
 @app.route('/approve/<int:user_id>')
 def approve_user(user_id):
+    """Approve a user by their user ID."""
     if not session.get('is_admin'):
         return redirect(url_for('login'))
     conn = sqlite3.connect(os.path.join(APP_ROOT, 'users.db'))
@@ -1110,14 +1241,14 @@ def block_user(user_id):
 
 @app.template_filter('contains')
 def contains_filter(s, substring):
-    """Custom filter to check if string contains substring"""
+    """Check if a string contains a specified substring."""
     if s is None or substring is None:
         return False
     return substring in str(s)
 
 @app.template_filter('search')
 def search_filter(s, substring):
-    """Custom filter to search for substring"""
+    """Custom filter to check if a substring exists in a string."""
     if s is None or substring is None:
         return False
     return substring in str(s)
@@ -1125,6 +1256,7 @@ def search_filter(s, substring):
 # Text input -> predict
 @app.route('/input', methods=['GET', 'POST'])
 def input_page():
+    """Handles user input and redirects to the prediction page."""
     if 'user' not in session:
         return redirect(url_for('login'))
     if request.method == 'POST':
@@ -1133,6 +1265,18 @@ def input_page():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    """Predict the clinical outcome based on user input data.
+    
+    This function processes form data submitted by the user, mapping it to clinical
+    features with appropriate scaling. It validates and converts the input values,
+    ensuring they fall within specified ranges. The processed features are then
+    used to make a prediction using the `predict_with_fixed_scaling` function,
+    which returns the prediction result along with confidence and other relevant
+    information. Finally, the results are stored in the session for further use.
+    
+    Returns:
+        Response: A redirect response to the 'image_input' route.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -1192,6 +1336,17 @@ def predict():
 # Image upload -> predict + grad-cam
 @app.route('/image', methods=['GET', 'POST'])
 def image_input():
+    """Handle image upload and processing for prediction and Grad-CAM generation.
+    
+    This function manages the image upload process, including validation of the
+    uploaded file, saving it to the server, and running predictions using a pre-
+    trained model. If the model is available, it generates predictions and a Grad-
+    CAM visualization. It also handles session management for storing results and
+    redirects the user to the audio input page after processing.
+    
+    Returns:
+        Response: A redirect to the audio input page or a rendered template for image input.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -1364,6 +1519,15 @@ def audio_input():
 
 @app.route('/history')
 def history():
+    """Render the history page for the logged-in user.
+    
+    This function checks if a user is logged in by verifying the session.  If the
+    user is not logged in, it redirects to the login page. Upon  successful
+    verification, it retrieves the user's results from the  SQLite database,
+    counting the number of records indicating high and  low/no Alzheimer risk.
+    Finally, it renders the 'history.html'  template with the retrieved records and
+    statistics.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     username = session['user']
@@ -1380,6 +1544,17 @@ def history():
 
 @app.route('/result')
 def final_output():
+    """Generate the final output for Alzheimer's risk assessment.
+    
+    This function processes user session data to compute and visualize  SHAP values
+    for text, image, and audio features related to Alzheimer's  risk. It calculates
+    a weighted fusion score based on the risk  probabilities derived from model
+    predictions and generates a clinical  summary, risk factors report, and
+    recommendations. The results are  then saved to a database and rendered in an
+    output template.  The function also handles various exceptions during the SHAP
+    analysis  and ensures that the necessary visualizations are created and saved
+    for each modality.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
 
@@ -1576,7 +1751,15 @@ def final_output():
     # ============ FUSION SCORE CALCULATION AND FINAL PROCESSING ============
 
     def get_risk_probability(label, prob):
-        """Convert model predictions to Alzheimer risk probability (0-1 scale)"""
+        """Convert model predictions to Alzheimer risk probability (0-1 scale).
+        
+        This function evaluates the provided label to determine the risk  probability
+        of Alzheimer's disease. It checks for high and low risk  indicators within the
+        label string. If high risk indicators are  present, the function returns the
+        probability directly. Conversely,  if low risk indicators are found, it returns
+        the inverse of the  probability. If neither is detected, the original
+        probability is returned.
+        """
         label_str = str(label).lower() if label else ""
         
         # High risk indicators
@@ -1696,6 +1879,7 @@ def final_output():
 # Serve generated explainers
 @app.route('/explainers/<path:filename>')
 def explainers(filename):
+    """Serve generated explainers from the specified folder."""
     return send_from_directory(EXPLAINERS_FOLDER, filename)
 
 # ----------------- Run -----------------
