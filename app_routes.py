@@ -40,14 +40,14 @@ init_db()
 
 @app.template_filter('contains')
 def contains_filter(s, substring):
-    """Custom filter to check if string contains substring"""
+    """Check if a string contains a specified substring."""
     if s is None or substring is None:
         return False
     return substring in str(s)
 
 @app.template_filter('search')
 def search_filter(s, substring):
-    """Custom filter to search for substring"""
+    """Custom filter to check if a substring exists in a string."""
     if s is None or substring is None:
         return False
     return substring in str(s)
@@ -56,10 +56,12 @@ def search_filter(s, substring):
 
 @app.route('/')
 def home():
+    """Redirects to the login page."""
     return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Handles user registration and stores credentials in the database."""
     if request.method == 'POST':
         uname = request.form['username']
         pwd = request.form['password']
@@ -112,6 +114,7 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
+    """Render the dashboard for the logged-in user with result statistics."""
     if 'user' not in session:
         return redirect(url_for('login'))
     uname = session['user']
@@ -128,6 +131,7 @@ def dashboard():
 
 @app.route('/analytics')
 def analytics():
+    """Render the analytics page with user statistics and model performance data."""
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -192,6 +196,7 @@ def history():
 
 @app.route('/input', methods=['GET', 'POST'])
 def input_page():
+    """Handles the input page for user predictions."""
     if 'user' not in session:
         return redirect(url_for('login'))
     if request.method == 'POST':
@@ -200,6 +205,17 @@ def input_page():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    """Predict the clinical outcome based on user input data.
+    
+    This function processes user input from a form, mapping the fields to clinical
+    features with appropriate scaling. It validates and converts the input values,
+    ensuring they fall within specified ranges. The processed features are then
+    used to make a prediction using the `predict_with_fixed_scaling` function, and
+    the results are stored in the session for further use.
+    
+    Returns:
+        Response: A redirect response to the 'image_input' route.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -257,6 +273,17 @@ def predict():
 
 @app.route('/image', methods=['GET', 'POST'])
 def image_input():
+    """Handle image upload and processing for predictions.
+    
+    This function manages the image input process, including file validation,
+    saving the image, and running predictions using a machine learning model. It
+    checks for user authentication, handles various error cases, and generates a
+    Grad-CAM explanation if applicable. The function also manages session data to
+    store the image file path and prediction results.
+    
+    Returns:
+        Response: A redirect to the audio input page or a rendered template for image input.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -351,6 +378,18 @@ def image_input():
     return render_template('image_input.html')
 @app.route('/audio', methods=['GET', 'POST'])
 def audio_input():
+    """Handle audio file input and processing for the application.
+    
+    This function manages the audio file upload process, ensuring that the user is
+    authenticated and has completed the necessary prior steps. It validates the
+    uploaded audio file, saves it to the specified directory, and invokes the audio
+    prediction model if available. In case of errors during processing, appropriate
+    messages are flashed to the user, and fallback mechanisms are employed when
+    necessary.
+    
+    Returns:
+        Response: A redirect to the final output or the audio input template.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
     
@@ -416,6 +455,15 @@ def audio_input():
     return render_template('audio_input.html')
 @app.route('/result')
 def final_output():
+    """Generates the final output for Alzheimer risk assessment.
+    
+    This function checks user session validity and retrieves predictions for text,
+    image, and audio modalities.  It performs SHAP analysis for text features,
+    calculates risk probabilities based on model outputs,  and generates a weighted
+    fusion score to determine the overall Alzheimer risk level.  Additionally, it
+    compiles a clinical summary, risk factors report, and recommendations before
+    saving  the results to a database and rendering the output template.
+    """
     if 'user' not in session:
         return redirect(url_for('login'))
 
@@ -498,7 +546,15 @@ def final_output():
 
     # FUSION SCORE CALCULATION
     def get_risk_probability(label, prob):
-        """Convert model predictions to Alzheimer risk probability (0-1 scale)"""
+        """Convert model predictions to Alzheimer risk probability (0-1 scale).
+        
+        This function evaluates the provided label to determine the risk probability
+        of Alzheimer's disease based on the presence of specific high or low risk
+        indicators. If any high risk indicators are found in the label, the function
+        returns the original probability. Conversely, if low risk indicators are
+        present, it returns the complement of the probability. If neither is found,
+        the original probability is returned unchanged.
+        """
         label_str = str(label).lower() if label else ""
         
         high_risk_indicators = [
@@ -582,6 +638,15 @@ def final_output():
 
 @app.route('/admin')
 def admin_panel():
+    """Render the admin panel with user and results data.
+    
+    This function checks if the current session belongs to an admin user.  If not,
+    it redirects to the login page. It then connects to the  SQLite database
+    located at 'users.db' to fetch user information and  results. The function
+    calculates statistics on the results, specifically  the counts of high and low
+    risk entries, and prepares the data for  rendering in the 'admin.html'
+    template.
+    """
     if not session.get('is_admin'):
         return redirect(url_for('login'))
     conn = sqlite3.connect(os.path.join(APP_ROOT, 'users.db'))
@@ -617,6 +682,7 @@ def approve_user(user_id):
 
 @app.route('/block/<int:user_id>')
 def block_user(user_id):
+    """Block a user by updating their approval status in the database."""
     if not session.get('is_admin'):
         return redirect(url_for('login'))
     conn = sqlite3.connect(os.path.join(APP_ROOT, 'users.db'))
@@ -630,6 +696,7 @@ def block_user(user_id):
 
 @app.route('/explainers/<path:filename>')
 def explainers(filename):
+    """Serve static files from the explainers directory."""
     return send_from_directory(EXPLAINERS_FOLDER, filename)
 
 # ----------------- Run Application -----------------
