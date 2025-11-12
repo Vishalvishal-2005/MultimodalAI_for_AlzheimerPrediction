@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard | FUSE XAI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-blue: #004080;
+      --secondary-blue: #006699;
+      --accent-purple: #667eea;
+      --danger-red: #b30000;
+      --success-green: #198754;
+      --warning-orange: #ff6b35;
+      --info-teal: #20c997;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) fixed;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      color: var(--primary-blue);
+      padding: 1rem 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border-bottom: 3px solid var(--accent-purple);
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .analytics-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .analytics-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      padding: 1rem;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--primary-blue));
+    }
+
+    .stat-card.accuracy { background: linear-gradient(135deg, #e8f5e8, #c8e6c9); }
+    .stat-card.precision { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+    .stat-card.recall { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+    .stat-card.models { background: linear-gradient(135deg, #f3e5f5, #e1bee7); }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .trend-indicator {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 15px;
+      display: inline-block;
+      margin-left: 0.5rem;
+    }
+
+    .trend-up { background: var(--success-green); color: white; }
+    .trend-down { background: var(--danger-red); color: white; }
+
+    .filter-section {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .insight-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 1.5rem;
+      border-left: 4px solid var(--accent-purple);
+      margin-bottom: 1rem;
+    }
+
+    .model-performance {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 1.5rem;
+    }
+
+    .performance-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: #e9ecef;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+
+    .performance-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .btn-analytics {
+      border-radius: 15px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-analytics:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    footer {
+      margin-top: auto;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary-blue);
+      padding: 1.5rem 0;
+      font-weight: 500;
+    }
+
+    .nav-pills .nav-link {
+      border-radius: 10px;
+      margin: 0.2rem;
+      font-weight: 500;
+    }
+
+    .nav-pills .nav-link.active {
+      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+    }
+
+    .data-table {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .table th {
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+    }
+
+    .table td {
+      border-color: #e9ecef;
+    }
+
+    .risk-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .risk-high { background: #ffebee; color: var(--danger-red); }
+    .risk-medium { background: #fff3e0; color: var(--warning-orange); }
+    .risk-low { background: #e8f5e8; color: var(--success-green); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="navbar-brand">
+          <i class="fas fa-brain me-2"></i>
+          FUSE XAI - Analytics
+        </div>
+        <div class="d-flex align-items-center">
+          <div class="user-welcome me-3">
+            <i class="fas fa-user-md me-2"></i>Dr. {{ user }}
+          </div>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm me-2">
+            <i class="fas fa-arrow-left me-1"></i>Dashboard
+          </a>
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Analytics Content -->
+  <div class="container py-4">
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="analytics-card p-4">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h2 class="mb-2" style="color: var(--primary-blue);">
+                <i class="fas fa-chart-line me-2"></i>Analytics Dashboard
+              </h2>
+              <p class="mb-0 text-muted">
+                Comprehensive insights into Alzheimer's diagnosis performance and model analytics
+              </p>
+            </div>
+            <div class="col-md-4 text-end">
+              <div class="btn-group">
+                <button class="btn btn-analytics btn-primary">
+                  <i class="fas fa-download me-2"></i>Export Report
+                </button>
+                <button class="btn btn-analytics btn-secondary">
+                  <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="analytics-card stat-card accuracy">
+          <div class="stat-icon" style="color: var(--success-green);">
+            <i class="fas fa-bullseye"></i>
+          </div>
+          <div class="stat-number" style="color: var(--success-green);">87.3%</div>
+          <div class="stat-label">Overall Accuracy</div>
+          <span class="trend-indicator trend-up">+2.1%</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="analytics-card stat-card precision">
+          <div class="stat-icon" style="color: var(--primary-blue);">
+            <i class="fas fa-crosshairs"></i>
+          </div>
+          <div class="stat-number" style="color: var(--primary-blue);">89.5%</div>
+          <div class="stat-label">Precision Rate</div>
+          <span class="trend-indicator trend-up">+1.4%</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="analytics-card stat-card recall">
+          <div class="stat-icon" style="color: var(--warning-orange);">
+            <i class="fas fa-search"></i>
+          </div>
+          <div class="stat-number" style="color: var(--warning-orange);">85.2%</div>
+          <div class="stat-label">Recall Rate</div>
+          <span class="trend-indicator trend-up">+3.2%</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="analytics-card stat-card models">
+          <div class="stat-icon" style="color: var(--accent-purple);">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div class="stat-number" style="color: var(--accent-purple);">3</div>
+          <div class="stat-label">Active Models</div>
+          <span class="trend-indicator trend-up">+1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="filter-section">
+          <div class="row g-3 align-items-center">
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Time Period</label>
+              <select class="form-select">
+                <option>Last 7 days</option>
+                <option selected>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>Last year</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Model Type</label>
+              <select class="form-select">
+                <option selected>All Models</option>
+                <option>Text/Clinical</option>
+                <option>MRI Imaging</option>
+                <option>Audio Analysis</option>
+                <option>Fusion Model</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Risk Level</label>
+              <select class="form-select">
+                <option selected>All Levels</option>
+                <option>High Risk</option>
+                <option>Medium Risk</option>
+                <option>Low Risk</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">&nbsp;</label>
+              <button class="btn btn-primary w-100">
+                <i class="fas fa-filter me-2"></i>Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="analytics-card">
+          <div class="p-3 border-bottom">
+            <h5 class="mb-0" style="color: var(--primary-blue);">
+              <i class="fas fa-chart-bar me-2"></i>Diagnosis Distribution
+            </h5>
+          </div>
+          <div class="chart-container">
+            <canvas id="diagnosisChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="analytics-card">
+          <div class="p-3 border-bottom">
+            <h5 class="mb-0" style="color: var(--primary-blue);">
+              <i class="fas fa-chart-pie me-2"></i>Risk Level Breakdown
+            </h5>
+          </div>
+          <div class="chart-container">
+            <canvas id="riskChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="analytics-card">
+          <div class="p-3 border-bottom">
+            <h5 class="mb-0" style="color: var(--primary-blue);">
+              <i class="fas fa-chart-line me-2"></i>Performance Over Time
+            </h5>
+          </div>
+          <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="analytics-card">
+          <div class="p-3 border-bottom">
+            <h5 class="mb-0" style="color: var(--primary-blue);">
+              <i class="fas fa-brain me-2"></i>Model Performance Comparison
+            </h5>
+          </div>
+          <div class="chart-container">
+            <canvas id="modelComparisonChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insights and Model Performance -->
+    <div class="row">
+      <!-- AI Insights -->
+      <div class="col-md-6">
+        <div class="analytics-card p-4">
+          <h5 class="mb-4" style="color: var(--primary-blue);">
+            <i class="fas fa-lightbulb me-2"></i>AI Insights & Recommendations
+          </h5>
+          <div class="insight-card">
+            <h6><i class="fas fa-arrow-up text-success me-2"></i>Performance Improvement</h6>
+            <p class="mb-0 small">Model accuracy has improved by 2.1% in the last 30 days. Consider retraining older models.</p>
+          </div>
+          <div class="insight-card">
+            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Data Quality Alert</h6>
+            <p class="mb-0 small">12% of MRI images have quality issues. Review preprocessing pipeline.</p>
+          </div>
+          <div class="insight-card">
+            <h6><i class="fas fa-chart-bar text-info me-2"></i>Feature Importance</h6>
+            <p class="mb-0 small">Hippocampal volume and speech patterns show highest predictive power.</p>
+          </div>
+          <div class="insight-card">
+            <h6><i class="fas fa-users text-primary me-2"></i>Demographic Trends</h6>
+            <p class="mb-0 small">Patients aged 75+ show 35% higher risk correlation. Focus screening efforts.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Performance Details -->
+      <div class="col-md-6">
+        <div class="analytics-card p-4">
+          <h5 class="mb-4" style="color: var(--primary-blue);">
+            <i class="fas fa-cogs me-2"></i>Model Performance Details
+          </h5>
+          <div class="model-performance">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold">Fusion Model</span>
+              <span class="badge bg-success">87.3%</span>
+            </div>
+            <div class="performance-bar">
+              <div class="performance-fill bg-success" style="width: 87.3%;"></div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold">MRI Imaging Model</span>
+              <span class="badge bg-primary">82.1%</span>
+            </div>
+            <div class="performance-bar">
+              <div class="performance-fill bg-primary" style="width: 82.1%;"></div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold">Audio Analysis Model</span>
+              <span class="badge bg-info">78.5%</span>
+            </div>
+            <div class="performance-bar">
+              <div class="performance-fill bg-info" style="width: 78.5%;"></div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold">Clinical Data Model</span>
+              <span class="badge bg-warning">75.2%</span>
+            </div>
+            <div class="performance-bar">
+              <div class="performance-fill bg-warning" style="width: 75.2%;"></div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h6 class="mb-3">Model Recommendations</h6>
+            <ul class="list-unstyled small">
+              <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Fusion model performing optimally</li>
+              <li class="mb-2"><i class="fas fa-sync-alt text-warning me-2"></i>Audio model needs retraining</li>
+              <li class="mb-2"><i class="fas fa-bolt text-info me-2"></i>Consider ensemble methods for clinical data</li>
+              <li class="mb-0"><i class="fas fa-database text-primary me-2"></i>Increase MRI dataset diversity</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Assessments Table -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="analytics-card">
+          <div class="p-3 border-bottom">
+            <h5 class="mb-0" style="color: var(--primary-blue);">
+              <i class="fas fa-table me-2"></i>Recent Assessments
+            </h5>
+          </div>
+          <div class="data-table">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Date</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Risk Level</th>
+                    <th>Confidence</th>
+                    <th>Model Used</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>PAT230015</td>
+                    <td>2024-01-15</td>
+                    <td>72</td>
+                    <td>Male</td>
+                    <td><span class="risk-badge risk-high">High Risk</span></td>
+                    <td>89.2%</td>
+                    <td>Fusion</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>PAT230014</td>
+                    <td>2024-01-14</td>
+                    <td>68</td>
+                    <td>Female</td>
+                    <td><span class="risk-badge risk-low">Low Risk</span></td>
+                    <td>92.1%</td>
+                    <td>Fusion</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>PAT230013</td>
+                    <td>2024-01-13</td>
+                    <td>81</td>
+                    <td>Male</td>
+                    <td><span class="risk-badge risk-medium">Medium Risk</span></td>
+                    <td>76.8%</td>
+                    <td>MRI Only</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>PAT230012</td>
+                    <td>2024-01-12</td>
+                    <td>65</td>
+                    <td>Female</td>
+                    <td><span class="risk-badge risk-low">Low Risk</span></td>
+                    <td>88.5%</td>
+                    <td>Fusion</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container text-center">
+      <div class="row align-items-center">
+        <div class="col-md-6 text-md-start">
+          <i class="fas fa-brain me-2"></i>
+          <strong>FUSE XAI</strong> - Advanced Analytics Dashboard
+        </div>
+        <div class="col-md-6 text-md-end">
+          &copy; 2025 | All Rights Reserved | Last updated: Just now
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+      // Diagnosis Distribution Chart
+      const diagnosisCtx = document.getElementById('diagnosisChart').getContext('2d');
+      new Chart(diagnosisCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Alzheimer\'s', 'MCI', 'Normal', 'Vascular', 'Other'],
+          datasets: [{
+            label: 'Diagnosis Count',
+            data: [45, 28, 67, 12, 8],
+            backgroundColor: [
+              '#b30000', '#ff6b35', '#198754', '#004080', '#6c757d'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0,0,0,0.1)' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // Risk Level Pie Chart
+      const riskCtx = document.getElementById('riskChart').getContext('2d');
+      new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+          datasets: [{
+            data: [35, 25, 40],
+            backgroundColor: ['#b30000', '#ff6b35', '#198754'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          cutout: '60%'
+        }
+      });
+
+      // Performance Over Time
+      const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+      new Chart(performanceCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: [
+            {
+              label: 'Accuracy',
+              data: [82, 83, 84, 85, 86, 86.5, 87, 87.3, 87.5, 87.8, 88, 88.2],
+              borderColor: '#198754',
+              backgroundColor: 'rgba(25, 135, 84, 0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: 'Precision',
+              data: [84, 85, 86, 87, 87.5, 88, 88.5, 89, 89.2, 89.4, 89.5, 89.6],
+              borderColor: '#004080',
+              backgroundColor: 'rgba(0, 64, 128, 0.1)',
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: {
+              min: 80,
+              max: 100,
+              grid: { color: 'rgba(0,0,0,0.1)' }
+            }
+          }
+        }
+      });
+
+      // Model Comparison Chart
+      const modelCtx = document.getElementById('modelComparisonChart').getContext('2d');
+      new Chart(modelCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Accuracy', 'Precision', 'Recall', 'Speed', 'Explainability', 'Robustness'],
+          datasets: [
+            {
+              label: 'Fusion Model',
+              data: [87, 89, 85, 75, 90, 88],
+              backgroundColor: 'rgba(102, 126, 234, 0.2)',
+              borderColor: '#667eea',
+              pointBackgroundColor: '#667eea'
+            },
+            {
+              label: 'MRI Model',
+              data: [82, 85, 80, 85, 75, 82],
+              backgroundColor: 'rgba(0, 64, 128, 0.2)',
+              borderColor: '#004080',
+              pointBackgroundColor: '#004080'
+            },
+            {
+              label: 'Audio Model',
+              data: [78, 80, 76, 90, 70, 75],
+              backgroundColor: 'rgba(32, 201, 151, 0.2)',
+              borderColor: '#20c997',
+              pointBackgroundColor: '#20c997'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { display: true },
+              suggestedMin: 50,
+              suggestedMax: 100
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

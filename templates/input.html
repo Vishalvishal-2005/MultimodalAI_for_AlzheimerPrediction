@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Assessment | FUSE XAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #004080;
+            --secondary-blue: #006699;
+            --accent-purple: #667eea;
+            --success-green: #28a745;
+            --warning-orange: #ff6b35;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 16s; }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: var(--primary-blue);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-bottom: 3px solid var(--accent-purple);
+            position: relative;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            border: none;
+        }
+
+        .form-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--accent-purple);
+            transition: all 0.3s ease;
+        }
+
+        .form-section:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateX(5px);
+        }
+
+        .section-header {
+            color: var(--primary-blue);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-header i {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-text {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 64, 128, 0.3);
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .progress-tracker {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .progress-bar-active {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--primary-blue));
+            z-index: 2;
+            transition: width 0.3s ease;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+            z-index: 3;
+            flex: 1;
+        }
+
+        .step-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-icon {
+            background: linear-gradient(135deg, var(--accent-purple), var(--primary-blue));
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .step.active .step-label {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .medical-decoration {
+            position: fixed;
+            opacity: 0.1;
+            z-index: 2;
+            font-size: 4rem;
+        }
+
+        .stethoscope { top: 10%; right: 10%; animation: swing 3s ease-in-out infinite; }
+        .clipboard { bottom: 10%; left: 10%; animation: float 6s ease-in-out infinite; }
+
+        @keyframes swing {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        .tooltip-icon {
+            color: var(--accent-purple);
+            margin-left: 0.5rem;
+            cursor: help;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--danger-red);
+        }
+
+        @media (max-width: 768px) {
+            .medical-decoration { display: none; }
+            .card { margin: 1rem; }
+            .form-section { padding: 1.5rem; }
+            .progress-steps { flex-direction: column; gap: 1rem; }
+            .progress-steps::before { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Medical Decorations -->
+    <div class="medical-decoration stethoscope">
+        <i class="fas fa-stethoscope"></i>
+    </div>
+    <div class="medical-decoration clipboard">
+        <i class="fas fa-clipboard-list"></i>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="navbar-brand">
+                    <i class="fas fa-brain me-2"></i>
+                    FUSE XAI
+                </div>
+                <div>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container input-container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="form-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <h3 class="mb-2">Patient Clinical Assessment</h3>
+                        <p class="mb-0 opacity-75">Complete the patient evaluation form to begin AI analysis</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Progress Tracker -->
+                        <div class="progress-tracker">
+                            <div class="progress-steps">
+                                <div class="progress-bar-active" style="width: 25%;"></div>
+                                <div class="step active">
+                                    <div class="step-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </div>
+                                    <div class="step-label">Clinical Data</div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-icon">
+                                        <i class="fas fa-brain"></i>
+                                    </div>
+                                    <div class="step-label">MRI Analysis</div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-icon">
+                                        <i class="fas fa-microphone"></i>
+                                    </div>
+                                    <div class="step-label">Voice Analysis</div>
+                                </div>
+                                <div class="step">
+                                    <div class="step-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="step-label">Results</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form action="{{ url_for('predict') }}" method="post" id="patientForm">
+                            <!-- Patient Information Section -->
+                            <div class="form-section">
+                                <h4 class="section-header">
+                                    <i class="fas fa-user-circle"></i>Patient Information
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="PatientID" class="form-label required-field">Patient ID</label>
+                                        <input type="text" class="form-control" id="PatientID" name="PatientID" required
+                                               placeholder="Enter unique patient identifier">
+                                        <div class="form-text">Unique identifier for patient records</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="Age" class="form-label required-field">Age</label>
+                                        <input type="number" class="form-control" id="Age" name="Age" required
+                                               min="40" max="120" placeholder="Patient age in years">
+                                        <div class="form-text">Patient's current age (40-120 years)</div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="Gender" class="form-label required-field">Gender</label>
+                                        <select class="form-select" id="Gender" name="Gender" required>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="Ethnicity" class="form-label">Ethnicity</label>
+                                        <select class="form-select" id="Ethnicity" name="Ethnicity">
+                                            <option value="">Select Ethnicity</option>
+                                            <option value="Caucasian">Caucasian</option>
+                                            <option value="African">African</option>
+                                            <option value="Asian">Asian</option>
+                                            <option value="Hispanic">Hispanic</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lifestyle Factors Section -->
+                            <div class="form-section">
+                                <h4 class="section-header">
+                                    <i class="fas fa-heartbeat"></i>Lifestyle & Health Factors
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="EducationLevel" class="form-label">Education Level</label>
+                                        <select class="form-select" id="EducationLevel" name="EducationLevel">
+                                            <option value="">Select Education Level</option>
+                                            <option value="Primary">Primary School</option>
+                                            <option value="Secondary">Secondary School</option>
+                                            <option value="Bachelor">Bachelor's Degree</option>
+                                            <option value="Master">Master's Degree</option>
+                                            <option value="Doctorate">Doctorate</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="BMI" class="form-label">BMI (Body Mass Index)</label>
+                                        <input type="number" step="0.1" class="form-control" id="BMI" name="BMI"
+                                               min="15" max="50" placeholder="e.g., 22.5">
+                                        <div class="form-text">Normal range: 18.5 - 24.9</div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="Smoking" class="form-label">Smoking Status</label>
+                                        <select class="form-select" id="Smoking" name="Smoking">
+                                            <option value="0">Non-smoker</option>
+                                            <option value="1">Current Smoker</option>
+                                            <option value="2">Former Smoker</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="AlcoholConsumption" class="form-label">Alcohol Consumption</label>
+                                        <select class="form-select" id="AlcoholConsumption" name="AlcoholConsumption">
+                                            <option value="0">None</option>
+                                            <option value="1">Occasional</option>
+                                            <option value="2">Regular</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="PhysicalActivity" class="form-label">Physical Activity</label>
+                                        <select class="form-select" id="PhysicalActivity" name="PhysicalActivity">
+                                            <option value="0">Sedentary</option>
+                                            <option value="1">Light</option>
+                                            <option value="2">Moderate</option>
+                                            <option value="3">Active</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cognitive Symptoms Section -->
+                            <div class="form-section">
+                                <h4 class="section-header">
+                                    <i class="fas fa-brain"></i>Cognitive & Behavioral Assessment
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="MemoryComplaints" class="form-label">Memory Complaints</label>
+                                        <select class="form-select" id="MemoryComplaints" name="MemoryComplaints">
+                                            <option value="0">No significant issues</option>
+                                            <option value="1">Mild forgetfulness</option>
+                                            <option value="2">Moderate memory loss</option>
+                                            <option value="3">Severe memory impairment</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="Forgetfulness" class="form-label">Forgetfulness Frequency</label>
+                                        <select class="form-select" id="Forgetfulness" name="Forgetfulness">
+                                            <option value="0">Rarely</option>
+                                            <option value="1">Occasionally</option>
+                                            <option value="2">Frequently</option>
+                                            <option value="3">Constantly</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="Confusion" class="form-label">Confusion Episodes</label>
+                                        <select class="form-select" id="Confusion" name="Confusion">
+                                            <option value="0">None</option>
+                                            <option value="1">Rare</option>
+                                            <option value="2">Occasional</option>
+                                            <option value="3">Frequent</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="Disorientation" class="form-label">Disorientation</label>
+                                        <select class="form-select" id="Disorientation" name="Disorientation">
+                                            <option value="0">None</option>
+                                            <option value="1">Mild</option>
+                                            <option value="2">Moderate</option>
+                                            <option value="3">Severe</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="BehavioralProblems" class="form-label">Behavioral Issues</label>
+                                        <select class="form-select" id="BehavioralProblems" name="BehavioralProblems">
+                                            <option value="0">None</option>
+                                            <option value="1">Mild</option>
+                                            <option value="2">Moderate</option>
+                                            <option value="3">Severe</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Daily Living & Additional Factors -->
+                            <div class="form-section">
+                                <h4 class="section-header">
+                                    <i class="fas fa-tasks"></i>Daily Living & Additional Factors
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ADL" class="form-label">ADL Score</label>
+                                        <input type="number" class="form-control" id="ADL" name="ADL"
+                                               min="0" max="100" placeholder="0-100 scale">
+                                        <div class="form-text">Activities of Daily Living score (Higher is better)</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="DietQuality" class="form-label">Diet Quality</label>
+                                        <select class="form-select" id="DietQuality" name="DietQuality">
+                                            <option value="0">Poor</option>
+                                            <option value="1">Fair</option>
+                                            <option value="2">Good</option>
+                                            <option value="3">Excellent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="PersonalityChanges" class="form-label">Personality Changes</label>
+                                        <select class="form-select" id="PersonalityChanges" name="PersonalityChanges">
+                                            <option value="0">None</option>
+                                            <option value="1">Mild</option>
+                                            <option value="2">Moderate</option>
+                                            <option value="3">Significant</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="DifficultyCompletingTasks" class="form-label">Task Completion Difficulty</label>
+                                        <select class="form-select" id="DifficultyCompletingTasks" name="DifficultyCompletingTasks">
+                                            <option value="0">None</option>
+                                            <option value="1">Mild</option>
+                                            <option value="2">Moderate</option>
+                                            <option value="3">Severe</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="DoctorInCharge" class="form-label">Referring Physician</label>
+                                        <input type="text" class="form-control" id="DoctorInCharge" name="DoctorInCharge"
+                                               placeholder="Name of doctor in charge">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-submit btn-lg px-5">
+                                    <i class="fas fa-arrow-right me-2"></i>Continue to MRI Analysis
+                                </button>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        All patient data is encrypted and HIPAA compliant
+                                    </small>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start">
+                    <i class="fas fa-brain me-2"></i>
+                    <strong>FUSE XAI</strong> - Clinical Assessment Module
+                </div>
+                <div class="col-md-6 text-md-end">
+                    &copy; {{ current_year or "2025" }} | All Rights Reserved
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form validation and enhancement
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('patientForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Real-time validation
+            form.addEventListener('input', function(e) {
+                const target = e.target;
+                if (target.hasAttribute('required') && target.value.trim() === '') {
+                    target.classList.add('is-invalid');
+                } else {
+                    target.classList.remove('is-invalid');
+                    target.classList.add('is-valid');
+                }
+            });
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+                const requiredFields = form.querySelectorAll('[required]');
+                
+                requiredFields.forEach(field => {
+                    if (field.value.trim() === '') {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields marked with *');
+                    return;
+                }
+
+                // Show loading state
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+                submitBtn.disabled = true;
+
+                // Form will submit normally after validation
+            });
+
+            // Age validation
+            const ageInput = document.getElementById('Age');
+            ageInput.addEventListener('blur', function() {
+                const age = parseInt(this.value);
+                if (age < 40 || age > 120) {
+                    this.classList.add('is-invalid');
+                    this.nextElementSibling.textContent = 'Age must be between 40 and 120 years';
+                }
+            });
+
+            // BMI validation
+            const bmiInput = document.getElementById('BMI');
+            bmiInput.addEventListener('blur', function() {
+                const bmi = parseFloat(this.value);
+                if (bmi && (bmi < 15 || bmi > 50)) {
+                    this.classList.add('is-invalid');
+                    this.nextElementSibling.textContent = 'BMI must be between 15 and 50';
+                }
+            });
+
+            // Page load animation
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease-in';
+            
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+
+        // Auto-save form data (local storage)
+        function autoSaveForm() {
+            const formData = new FormData(document.getElementById('patientForm'));
+            const data = Object.fromEntries(formData);
+            localStorage.setItem('patientFormData', JSON.stringify(data));
+        }
+
+        // Load saved form data
+        function loadSavedForm() {
+            const savedData = localStorage.getItem('patientFormData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const element = document.querySelector(`[name="${key}"]`);
+                    if (element) element.value = data[key];
+                });
+            }
+        }
+
+        // Auto-save on input
+        document.getElementById('patientForm').addEventListener('input', autoSaveForm);
+        
+        // Load saved data on page load
+        window.addEventListener('load', loadSavedForm);
+    </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Alzheimer's Diagnosis Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .clinical-report {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .diagnosis-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .risk-high { color: #dc3545; font-weight: bold; }
+        .risk-medium { color: #ffc107; font-weight: bold; }
+        .risk-low { color: #198754; font-weight: bold; }
+        .feature-table { font-size: 0.9em; }
+        .shap-image { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Clinical Report Header -->
+        <div class="clinical-report">
+            <div class="diagnosis-header text-center">
+                <h1>🧠 Alzheimer's Disease Clinical Diagnosis Report</h1>
+                <p class="mb-0">Multimodal AI-Assisted Assessment</p>
+            </div>
+
+            <!-- Diagnosis Summary Section -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Patient Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <td>{{ patient_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Diagnosis Date</th>
+                                    <td>{{ diagnosis_date }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Assessing Physician</th>
+                                    <td>AI Diagnostic System</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Overall Risk Assessment</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <h2 class="{{ 'risk-high' if fusion[1] >= 0.7 else 'risk-medium' if fusion[1] >= 0.4 else 'risk-low' }}">
+                                {{ risk_color }} {{ fusion[0] }}
+                            </h2>
+                            <p class="mb-0">Fusion Score: <strong>{{ "%.3f"|format(fusion[1]) }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multimodal Predictions Table -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Multimodal Diagnostic Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Modality</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Tabular Prediction</strong></td>
+                                    <td>{{ text[0] }}</td>
+                                    <td>{{ "%.0f"|format(text[1] * 100) }}%</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-danger' if text[0] == 'Presence' else 'bg-success' }}">
+                                            {{ 'High' if text[0] == 'Presence' else 'Low' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>MRI Image Prediction</strong></td>
+                                    <td>{{ image[0] }}</td>
+                                    <td>{{ "%.0f"|format(image[1] * 100) }}%</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-danger' if 'MCI' in image[0] or 'AD' in image[0] else 'bg-success' }}">
+                                            {{ 'High' if 'MCI' in image[0] or 'AD' in image[0] else 'Low' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Audio Speech Analysis</strong></td>
+                                    <td>{{ audio[0] }}</td>
+                                    <td>{{ "%.0f"|format(audio[1] * 100) }}%</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-danger' if audio[0] == 'Alzheimer' else 'bg-success' }}">
+                                            {{ 'High' if audio[0] == 'Alzheimer' else 'Low' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinical Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Clinical Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">{{ clinical_summary }}</p>
+                </div>
+            </div>
+
+            <!-- Key Contributing Factors -->
+            {% if top_shap_features %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Key Contributing Factors (SHAP Analysis)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped feature-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Feature</th>
+                                    <th>SHAP Impact</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature in top_shap_features %}
+                                <tr>
+                                    <td>{{ feature.rank }}️⃣</td>
+                                    <td><strong>{{ feature.feature }}</strong></td>
+                                    <td>+{{ "%.2f"|format(feature.impact) }}</td>
+                                    <td>{{ feature.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Visualization Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Model Explanations & Visualizations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if shap_text_path %}
+                        <div class="col-md-4 mb-3">
+                            <h6>Tabular Feature Importance</h6>
+                            <img src="{{ url_for('explainers', filename=shap_text_path) }}" class="shap-image" alt="SHAP Text">
+                        </div>
+                        {% endif %}
+                        {% if shap_img_path %}
+                        <div class="col-md-4 mb-3">
+                            <h6>MRI Grad-CAM</h6>
+                            <img src="{{ url_for('explainers', filename=shap_img_path) }}" class="shap-image" alt="Grad-CAM">
+                        </div>
+                        {% endif %}
+                        {% if shap_audio_path %}
+                        <div class="col-md-4 mb-3">
+                            <h6>Audio Analysis</h6>
+                            <img src="{{ url_for('explainers', filename=shap_audio_path) }}" class="shap-image" alt="SHAP Audio">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Clinical Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for rec in recommendations %}
+                        <li class="list-group-item">✅ {{ rec }}</li>
+                        {% endfor %}
+                        <li class="list-group-item">📅 Schedule follow-up assessment in 6 months</li>
+                        <li class="list-group-item">📊 Continue monitoring cognitive performance metrics</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+                <a href="{{ url_for('history') }}" class="btn btn-secondary">View History</a>
+                <button onclick="window.print()" class="btn btn-success">Print Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

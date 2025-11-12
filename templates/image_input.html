@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Brain MRI | FUSE XAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #004080;
+            --secondary-blue: #006699;
+            --accent-purple: #667eea;
+            --success-green: #28a745;
+            --info-teal: #20c997;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 16s; }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: var(--primary-blue);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-bottom: 3px solid var(--accent-purple);
+            position: relative;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .upload-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--info-teal), #17a2b8);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            border: none;
+        }
+
+        .mri-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .upload-area {
+            border: 3px dashed var(--accent-purple);
+            border-radius: 15px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--success-green);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--accent-purple);
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(40, 167, 69, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid var(--success-green);
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 1rem 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .supported-formats {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .format-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .format-item:last-child {
+            border-bottom: none;
+        }
+
+        .format-item i {
+            color: var(--success-green);
+            margin-right: 0.5rem;
+            width: 20px;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 64, 128, 0.3);
+        }
+
+        .btn-next:disabled {
+            background: #6c757d;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn-next::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-next:not(:disabled):hover::before {
+            left: 100%;
+        }
+
+        .scanning-tips {
+            background: rgba(32, 201, 151, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border-left: 4px solid var(--info-teal);
+        }
+
+        .tips-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tips-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(32, 201, 151, 0.3);
+        }
+
+        .tips-list li:last-child {
+            border-bottom: none;
+        }
+
+        .tips-list i {
+            color: var(--info-teal);
+            margin-right: 0.5rem;
+            width: 20px;
+        }
+
+        .medical-decoration {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 2;
+            font-size: 4rem;
+        }
+
+        .brain-scan { top: 10%; right: 10%; animation: scan 3s ease-in-out infinite; }
+        .mri-machine { bottom: 10%; left: 10%; animation: float 6s ease-in-out infinite; }
+
+        @keyframes scan {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--primary-blue));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .medical-decoration { display: none; }
+            .card { margin: 1rem; }
+            .upload-area { padding: 2rem 1rem; }
+        }
+    </style>
+</head>
+<>
+    <!-- Floating particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Medical Decorations -->
+    <div class="medical-decoration brain-scan">
+        <i class="fas fa-brain"></i>
+    </div>
+    <div class="medical-decoration mri-machine">
+        <i class="fas fa-magnet"></i>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="navbar-brand">
+                    <i class="fas fa-brain me-2"></i>
+                    FUSE XAI
+                </div>
+                <div>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container upload-container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="mri-icon">
+                            <i class="fas fa-magnet"></i>
+                        </div>
+                        <h3 class="mb-2">Brain MRI Analysis</h3>
+                        <p class="mb-0 opacity-75">Upload patient brain MRI for structural analysis</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Analysis Form - FIXED: File input INSIDE form -->
+                        <form method="POST" enctype="multipart/form-data" id="analysisForm" action="{{ url_for('image_input') }}">
+                            <!-- Upload Area -->
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <h4 class="mb-3" style="color: var(--primary-blue);">Drop MRI Image Here</h4>
+                                <p class="text-muted mb-3">or click to browse files</p>
+                                <input type="file" name="image" id="imageFile" class="file-input" 
+                                       accept=".jpg,.jpeg,.png,.gif,.tiff,.dcm" required>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageFile').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Choose MRI Image
+                                </button>
+                            </div>
+
+                            <!-- File Info -->
+                            <div class="file-info" id="fileInfo">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1" id="fileName">filename.jpg</h6>
+                                        <small class="text-muted" id="fileSize">0 MB</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <!-- Image Preview -->
+                                <img class="image-preview mt-2" id="imagePreview" alt="MRI Preview">
+                                <!-- Upload Progress -->
+                                <div class="progress mt-2" style="height: 6px; display: none;" id="uploadProgress">
+                                    <div class="progress-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Scanning Tips -->
+                            <div class="scanning-tips">
+                                <h5 class="mb-3" style="color: var(--info-teal);">
+                                    <i class="fas fa-lightbulb me-2"></i>Optimal MRI Guidelines
+                                </h5>
+                                <ul class="tips-list">
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        Use T1-weighted MRI scans for best results
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        Ensure proper axial, coronal, or sagittal orientation
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        High-resolution scans (1mm³ voxel size recommended)
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        Include full brain coverage without artifacts
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        DICOM format preferred for professional analysis
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Supported Formats -->
+                            <div class="supported-formats">
+                                <h5 class="mb-3" style="color: var(--primary-blue);">
+                                    <i class="fas fa-info-circle me-2"></i>Supported Image Formats
+                                </h5>
+                                <div class="format-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>DICOM (.dcm) - Medical imaging standard</span>
+                                </div>
+                                <div class="format-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>JPEG/PNG - Standard image formats</span>
+                                </div>
+                                <div class="format-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>NIfTI (.nii) - Neuroimaging format</span>
+                                </div>
+                                <div class="format-item">
+                                    <i class="fas fa-check"></i>
+                                    <span>TIFF - High-quality medical images</span>
+                                </div>
+                                <div class="format-item">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Maximum file size: 100 MB</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-next btn-lg px-5" id="nextBtn" disabled>
+                                    <i class="fas fa-arrow-right me-2"></i>Continue to Voice Analysis
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- How MRI Analysis Works section remains the same -->
+                <div class="card mt-4">
+                    <!-- ... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start">
+                    <i class="fas fa-brain me-2"></i>
+                    <strong>FUSE XAI</strong> - MRI Analysis Module
+                </div>
+                <div class="col-md-6 text-md-end">
+                    &copy; 2025 | All Rights Reserved
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // DOM Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const imageFile = document.getElementById('imageFile');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const nextBtn = document.getElementById('nextBtn');
+    const analysisForm = document.getElementById('analysisForm');
+
+    // Debug logging
+    console.log('🚀 Image upload page loaded');
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        console.log('📁 Files dropped:', files.length);
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+
+    // File input change
+    imageFile.addEventListener('change', function(e) {
+        console.log('📁 File input changed');
+        if (this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+
+    // Handle file selection - FIXED VERSION
+    function handleFileSelection(file) {
+        console.log('📄 Handling file:', file.name, file.type, file.size);
+        
+        // Validate file type
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.tiff', '.dcm'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!validExtensions.includes(fileExtension)) {
+            alert('Please select a valid medical image file (JPEG, PNG, DICOM, TIFF)');
+            console.log('❌ Invalid file type:', fileExtension);
+            return;
+        }
+
+        // Validate file size (100MB max)
+        const maxSize = 100 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('File size must be less than 100MB');
+            console.log('❌ File too large:', file.size);
+            return;
+        }
+
+        // Update file input with the selected file
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        imageFile.files = dataTransfer.files;
+
+        // Update file info
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.add('show');
+
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+            console.log('🖼️ Image preview loaded');
+        };
+        reader.onerror = function(e) {
+            console.error('❌ Error loading preview:', e);
+        };
+        reader.readAsDataURL(file);
+
+        // Enable next button
+        nextBtn.disabled = false;
+        console.log('✅ Next button enabled');
+
+        // Simulate upload progress
+        simulateUploadProgress();
+    }
+
+    // Clear file selection
+    function clearFile() {
+        imageFile.value = '';
+        fileInfo.classList.remove('show');
+        imagePreview.style.display = 'none';
+        nextBtn.disabled = true;
+        uploadProgress.style.display = 'none';
+        console.log('🗑️ File cleared');
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Simulate upload progress
+    function simulateUploadProgress() {
+        uploadProgress.style.display = 'block';
+        const progressBar = uploadProgress.querySelector('.progress-bar');
+        let width = 0;
+        
+        const interval = setInterval(() => {
+            if (width >= 100) {
+                clearInterval(interval);
+                console.log('📊 Upload simulation complete');
+            } else {
+                width += Math.random() * 10;
+                if (width > 100) width = 100;
+                progressBar.style.width = width + '%';
+            }
+        }, 200);
+    }
+
+    // Form submission
+    analysisForm.addEventListener('submit', function(e) {
+        console.log('🚀 Form submission started');
+        
+        if (!imageFile.files.length) {
+            e.preventDefault();
+            alert('Please select an MRI image first');
+            console.log('❌ No file selected');
+            return;
+        }
+
+        const file = imageFile.files[0];
+        console.log('📤 Submitting file:', file.name, file.size, file.type);
+
+        // Show loading state
+        nextBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing MRI...';
+        nextBtn.disabled = true;
+        
+        console.log('✅ Form submitted successfully');
+    });
+
+    // Click upload area to trigger file input
+    uploadArea.addEventListener('click', function() {
+        imageFile.click();
+    });
+
+    // Page load animation
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📄 Page loaded successfully');
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.5s ease-in';
+        
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+    });
+
+    // Add error handling for form submission
+    window.addEventListener('error', function(e) {
+        console.error('❌ Global error:', e.error);
+    });
+    </script>
+</body>
+</html>
