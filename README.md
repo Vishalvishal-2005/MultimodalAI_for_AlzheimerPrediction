@@ -52,7 +52,7 @@ Users upload MRI brain scans. The VGG16 CNN model processes the image and predic
 
 ## 🎤 Audio Upload
 
-<img width="1293" height="671" alt="image" src="https://github.com/user-attachments/assets/f6d0b129-d903-425c-9506-5c8b3afc9b89" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/450c060d-af93-4794-944b-ead4feaf53c7" />
 
 Users upload speech recordings. MFCC features are extracted and fed into the ConvLSTM model.
 
@@ -76,8 +76,8 @@ The system displays:
 # 🔍 Explainability Outputs
 
 <img width="1413" height="680" alt="image" src="https://github.com/user-attachments/assets/22958c15-e97a-4e1d-84c0-485b228d9a2e" />
+<img width="1601" height="403" alt="image" src="https://github.com/user-attachments/assets/2e00b7f2-e487-4a44-a0ea-992cfc54ffaf" />+
 
-![Uploading image.png…]()
 
 The system provides multimodal interpretability using SHAP and Grad-CAM, consolidated into a single comprehensive visualization.
 
@@ -230,4 +230,5 @@ This project is for research and educational purposes only and is not intended f
 # 📜 License
 
 MIT License
+
 
