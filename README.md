@@ -32,9 +32,9 @@ Unlike traditional single-input systems, this platform:
 
 ## 📊 Clinical Data Upload (Tabular Input)
 
+<img width="1902" height="1020" alt="image" src="https://github.com/user-attachments/assets/01646fa5-7af5-463b-9cb8-cb5b9956b4c2" />
 
 <img width="1902" height="1065" alt="image" src="https://github.com/user-attachments/assets/3b44c0e3-d7d9-41ff-abba-d201892a3413" />
-<img width="1902" height="1020" alt="image" src="https://github.com/user-attachments/assets/01646fa5-7af5-463b-9cb8-cb5b9956b4c2" />
 
 Users enter cognitive scores, demographics, and clinical indicators which are processed using a Random Forest classifier.
 
@@ -42,7 +42,8 @@ Users enter cognitive scores, demographics, and clinical indicators which are pr
 
 ## 🧠 MRI Image Upload
 
-![Uploading image.png…]()
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/64297568-c99d-4382-9aa0-ad0e5691aee8" />
+
 
 
 Users upload MRI brain scans. The VGG16 CNN model processes the image and predicts the disease stage.
@@ -59,7 +60,7 @@ Users upload speech recordings. MFCC features are extracted and fed into the Con
 
 ## 📈 Final Result Page
 
-![Uploading image.png…]()
+<img width="1293" height="671" alt="image" src="https://github.com/user-attachments/assets/1c2cbfae-7e58-4c27-8499-2246e092d388" />
 
 
 
@@ -229,3 +230,4 @@ This project is for research and educational purposes only and is not intended f
 # 📜 License
 
 MIT License
+
