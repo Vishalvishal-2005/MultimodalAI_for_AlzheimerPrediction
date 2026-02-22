@@ -24,11 +24,81 @@ Unlike traditional single-input systems, this platform:
 - Provides clinician-friendly recommendations  
 - Stores patient history securely using SQLite  
 
-This system is designed for research demonstration and academic deployment in clinical AI environments.
+---
+
+# 🖼️ Application Screenshots
 
 ---
 
-## 🏗️ System Architecture
+## 📊 Clinical Data Upload (Tabular Input)
+
+
+<img width="1902" height="1065" alt="image" src="https://github.com/user-attachments/assets/3b44c0e3-d7d9-41ff-abba-d201892a3413" />
+<img width="1902" height="1020" alt="image" src="https://github.com/user-attachments/assets/01646fa5-7af5-463b-9cb8-cb5b9956b4c2" />
+
+Users enter cognitive scores, demographics, and clinical indicators which are processed using a Random Forest classifier.
+
+---
+
+## 🧠 MRI Image Upload
+
+![Uploading image.png…]()
+
+
+Users upload MRI brain scans. The VGG16 CNN model processes the image and predicts the disease stage.
+
+---
+
+## 🎤 Audio Upload
+
+<img width="1293" height="671" alt="image" src="https://github.com/user-attachments/assets/f6d0b129-d903-425c-9506-5c8b3afc9b89" />
+
+Users upload speech recordings. MFCC features are extracted and fed into the ConvLSTM model.
+
+---
+
+## 📈 Final Result Page
+
+![Uploading image.png…]()
+
+
+
+The system displays:
+
+- Individual model predictions  
+- Fusion risk score  
+- Final Alzheimer risk classification  
+- Clinical recommendations  
+
+---
+
+# 🔍 Explainability Outputs
+
+<img width="1413" height="680" alt="image" src="https://github.com/user-attachments/assets/22958c15-e97a-4e1d-84c0-485b228d9a2e" />
+
+![Uploading image.png…]()
+
+The system provides multimodal interpretability using SHAP and Grad-CAM, consolidated into a single comprehensive visualization.
+
+This combined explainability output includes:
+
+### 📊 Clinical SHAP
+- Feature importance summary for tabular inputs  
+- Identifies the most influential cognitive and demographic variables  
+
+### 🧠 MRI SHAP + Grad-CAM
+- Pixel-level SHAP visualization  
+- Grad-CAM heatmap overlay  
+- Highlights brain regions influencing Alzheimer prediction  
+
+### 🎤 Audio SHAP
+- MFCC importance heatmap  
+- Shows acoustic features contributing to classification  
+
+These explainability techniques enhance clinical transparency and help interpret how each modality contributes to the final Alzheimer risk prediction.
+
+
+# 🏗️ System Architecture
 
 ### 🔹 Multimodal Pipeline
 
@@ -49,72 +119,31 @@ Clinical Recommendations
 
 ---
 
-## 🧠 Models Used
+# 🧠 Models Used
 
-### 1️⃣ Clinical Model (Tabular Data)
+## 1️⃣ Clinical Model
 
 - Algorithm: Random Forest  
-- Preprocessing: StandardScaler  
-- Output: Presence / Absence  
 - Explainability: SHAP TreeExplainer  
 
-Captures:
-- Cognitive test scores  
-- Demographic patterns  
-- Risk factors  
-
----
-
-### 2️⃣ MRI Image Model
+## 2️⃣ MRI Image Model
 
 - Architecture: VGG16 (Fine-Tuned)  
-- Input Size: 224 × 224  
+- Explainability: SHAP + Grad-CAM  
 
-Output Classes:
-- AD  
-- CN  
-- EMCI  
-- LMCI  
-- MCI  
-
-Explainability:
-- SHAP DeepExplainer  
-- Grad-CAM heatmap visualization  
-
-Grad-CAM highlights:
-- Hippocampal atrophy  
-- Temporal lobe degeneration  
-- Structural abnormalities  
-
----
-
-### 3️⃣ Audio Model
+## 3️⃣ Audio Model
 
 - Architecture: ConvLSTM  
-- Feature Extraction: MFCC (40 coefficients)  
-
-Output:
-- Alzheimer  
-- Healthy  
-
-Explainability:
-- SHAP KernelExplainer  
-- MFCC importance heatmap  
-
-Captures:
-- Tremor  
-- Pitch instability  
-- Voice degradation patterns  
+- Feature Extraction: MFCC  
+- Explainability: SHAP KernelExplainer  
 
 ---
 
-## 🧪 Multimodal Fusion Strategy
+# 🧪 Multimodal Fusion Strategy
 
-Weighted Risk Fusion:
-
-- Text Model → 30%  
-- MRI Model → 40%  
-- Audio Model → 30%  
+Text Model → 30%  
+MRI Model → 40%  
+Audio Model → 30%  
 
 Fusion Formula:
 
@@ -123,146 +152,60 @@ fusion_score =
 0.4 × Image_Risk × Image_Confidence +  
 0.3 × Audio_Risk × Audio_Confidence  
 
-Final Classification:
+Final Output:
 
-- High Alzheimer Risk (score ≥ 0.5)  
-- Low / No Alzheimer Risk (score < 0.5)  
-
----
-
-## 🔍 Explainability Framework
-
-### SHAP Explanations
-
-The system generates three SHAP explanations:
-
-📊 Clinical SHAP  
-- Feature importance summary plot  
-- Shows most influential tabular variables  
-
-🧠 MRI SHAP  
-- Pixel-level explanation  
-- Highlights brain regions contributing to prediction  
-
-🎤 Audio SHAP  
-- MFCC importance heatmap  
-- Shows acoustic features affecting classification  
+- High Alzheimer Risk  
+- Low / No Alzheimer Risk  
 
 ---
 
-### 🔥 Grad-CAM (For MRI)
+# 🌐 Web Application Features
 
-Grad-CAM is integrated for CNN interpretability.
-
-It:
-- Computes gradients of target class  
-- Produces heatmap overlay on MRI image  
-- Highlights regions influencing AD prediction  
-
-This provides visual transparency for clinicians.
-
----
-
-## 🌐 Web Application Features
-
-### 🔐 Authentication System
-
+## 🔐 Authentication
 - User Registration  
-- Admin Approval Required  
-- Secure Login  
-- Role-Based Access (Admin / User)  
+- Admin Approval  
+- Role-Based Access  
 
-Default Admin Account:  
-Email: admin@gmail.com  
-Password: admin  
+## 📊 Dashboard
+- Total Predictions  
+- Risk Distribution  
 
----
-
-### 📊 User Dashboard
-
-Displays:
-- Total predictions  
-- High-risk cases  
-- Low-risk cases  
-
----
-
-### 🧾 Patient Workflow
-
-1. Enter Clinical Data  
-2. Upload MRI Image  
-3. Upload Audio File  
-4. View Results  
-5. View SHAP & Grad-CAM Explanations  
-6. Get Recommendations  
-7. Save to History  
-
----
-
-### 📁 History Module
-
-Users can:
+## 📁 History
 - View past predictions  
-- Track patient risk progression  
-- View stored fusion scores  
+- Track fusion scores  
 
 ---
 
-## 🗂️ Project Structure
+# ⚙️ Installation
 
-MultimodalAI_for_AlzheimerPrediction/  
-│  
-├── models/  
-│   ├── rf_model.pkl  
-│   ├── scaler.pkl  
-│   ├── feature_order.pkl  
-│   ├── vgg16_adni_final2.h5  
-│   └── Alzheimer_Audio_ConvLSTM_SHAP.h5  
-│  
-├── static/  
-│   ├── uploads/  
-│   ├── shap_plots/  
-│  
-├── templates/  
-│   ├── login.html  
-│   ├── register.html  
-│   ├── dashboard.html  
-│   ├── admin.html  
-│   ├── input.html  
-│   ├── image_input.html  
-│   ├── audio_input.html  
-│   ├── output.html  
-│   ├── history.html  
-│  
-├── users.db  
-├── app.py  
-├── requirements.txt  
-└── README.md  
+Clone repository:
+
+```
+git clone https://github.com/yourusername/MultimodalAI_for_AlzheimerPrediction.git
+cd MultimodalAI_for_AlzheimerPrediction
+```
+
+Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+Run application:
+
+```
+python app.py
+```
+
+Open:
+
+```
+http://127.0.0.1:5000
+```
 
 ---
 
-## ⚙️ Installation
-
-### 1️⃣ Clone Repository
-
-git clone https://github.com/yourusername/MultimodalAI_for_AlzheimerPrediction.git  
-cd MultimodalAI_for_AlzheimerPrediction  
-
-### 2️⃣ Install Dependencies
-
-pip install -r requirements.txt  
-
-### 3️⃣ Run Application
-
-python app.py  
-
-Open browser:
-
-http://127.0.0.1:5000  
-
----
-
-## 📦 Requirements
+# 📦 Requirements
 
 - Python 3.9+  
 - Flask  
@@ -277,81 +220,12 @@ http://127.0.0.1:5000
 
 ---
 
-## 📊 Database Schema
-
-### Users Table
-- id  
-- username  
-- password  
-- is_admin  
-- is_approved  
-
-### Results Table
-- patient_id  
-- username  
-- text_label  
-- image_label  
-- audio_label  
-- fusion_label  
-- fusion_score  
-- date  
-
----
-
-## 🏥 Clinical Recommendation Engine
-
-Based on model outputs, the system provides suggestions such as:
-
-- Neurologist consultation  
-- MRI follow-up  
-- Speech therapy  
-- Cognitive lifestyle monitoring  
-
----
-
-## 🎯 Key Contributions
-
-✔ Multimodal Deep Learning Integration  
-✔ Full Flask Deployment  
-✔ SHAP Explainability (3 modalities)  
-✔ Grad-CAM Visualization  
-✔ Admin-Controlled Medical Dashboard  
-✔ Weighted Risk Fusion Strategy  
-
----
-
-## 🔬 Research Impact
-
-This system demonstrates:
-
-- Practical multimodal AI integration  
-- Clinically interpretable deep learning  
-- Explainable AI in healthcare  
-- Full-stack medical AI deployment  
-
-It bridges research models with real-world web implementation.
-
----
-
-## 🚀 Future Enhancements
-
-- 3D CNN for volumetric MRI  
-- Transformer-based multimodal fusion  
-- Docker containerization  
-- JWT-based authentication  
-- REST API version  
-- Real-time voice recording  
-- Cloud deployment (AWS / Azure)  
-
----
-
-## ⚠️ Important
+# ⚠️ Important
 
 This project is for research and educational purposes only and is not intended for clinical diagnosis.
 
 ---
 
-## 📜 License
+# 📜 License
 
 MIT License
-
