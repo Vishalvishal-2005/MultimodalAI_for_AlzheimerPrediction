@@ -23,6 +23,15 @@ EPOCHS, BATCH_SIZE = 50, 8  # Smaller batch size for better generalization
 
 # ================= ENHANCED FEATURE EXTRACTION =================
 def extract_enhanced_features(file_path, max_pad_len=100):
+    """Extracts and normalizes enhanced audio features from a given file.
+    
+    Args:
+        file_path: Path to the audio file.
+        max_pad_len: Maximum length for padding/truncating features.
+    
+    Returns:
+        A numpy array of extracted features, or None if an error occurs.
+    """
     try:
         signal, sr = librosa.load(file_path, sr=22050)
         signal, _ = librosa.effects.trim(signal, top_db=20)
@@ -53,6 +62,18 @@ def extract_enhanced_features(file_path, max_pad_len=100):
 
 # ================= LOAD DATA WITH AUGMENTATION =================
 def load_dataset_balanced(path):
+    """Load a balanced dataset of audio features from the specified path.
+    
+    This function iterates through predefined classes and attempts to load  audio
+    files with a `.wav` extension from their respective folders. For  each valid
+    audio file, it extracts enhanced features using the
+    `extract_enhanced_features` function. If no features are extracted,  a
+    ValueError is raised to indicate an issue with the dataset path or  file
+    format.
+    
+    Args:
+        path (str): The directory path containing subfolders for each class.
+    """
     X, y = [], []
     for cls in classes:
         folder = os.path.join(path, cls)

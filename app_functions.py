@@ -70,7 +70,8 @@ def init_db():
 # ----------------- Model Loading Functions -----------------
 
 def check_tensorflow_version():
-    """Check TensorFlow version and compatibility"""
+    """Check TensorFlow and Python versions, and verify model file existence and
+    sizes."""
     print(f"\n🔧 TensorFlow Version: {tf.__version__}")
     print(f"🔧 Python Version: {os.sys.version}")
     
@@ -92,7 +93,13 @@ def check_tensorflow_version():
 # ----------------- FIXED Image Model Loading -----------------
 
 def load_image_model():
-    """Load image model with compatibility fixes"""
+    """Load the VGG16 image model with compatibility fixes.
+    
+    This function attempts to load the VGG16 image model from a specified path.  It
+    first checks if the model file exists and then tries multiple loading methods
+    to ensure compatibility. If all loading attempts fail, it raises an error and
+    returns a fallback image model using the create_fallback_image_model function.
+    """
     try:
         print('🔄 Loading VGG16 image model...')
         image_model_path = os.path.join(APP_ROOT, 'vgg16_adni_final2.h5')
@@ -136,7 +143,7 @@ def load_image_model():
         return create_fallback_image_model()
 
 def create_fallback_image_model():
-    """Create fallback CNN image model"""
+    """Create a fallback CNN image model."""
     print('🔄 Creating fallback CNN image model...')
     
     model = tf.keras.Sequential([
@@ -166,7 +173,7 @@ def create_fallback_image_model():
 # ----------------- FIXED Audio Feature Extraction -----------------
 
 def extract_features(path, target_length=100, n_mfcc=65):
-    """Extract MFCC features from audio file with proper formatting"""
+    """Extract MFCC features from an audio file."""
     try:
         # Load audio file
         sig, sr = librosa.load(path, sr=22050)
@@ -240,7 +247,7 @@ def predict_audio(audio_model, audio_path):
         return 'Prediction Error', 0.5
 
 def load_models():
-    """Load all ML models with fallbacks"""
+    """Load all ML models with fallbacks."""
     print('Loading models...')
     check_tensorflow_version()
     
@@ -312,11 +319,11 @@ def load_models():
 # ----------------- Utility Functions -----------------
 
 def allowed_file(filename, allowed_set):
-    """Check if file extension is allowed"""
+    """Check if the file extension is allowed."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
 
 def get_img_array(img_path, target_size=(224, 224)):
-    """Load and preprocess image for model prediction"""
+    """Load and preprocess an image for model prediction."""
     img = keras_image.load_img(img_path, target_size=target_size)
     array = keras_image.img_to_array(img)
     array = np.expand_dims(array, axis=0)
@@ -325,11 +332,22 @@ def get_img_array(img_path, target_size=(224, 224)):
 
 # Legacy function for compatibility
 def extract_features(path, max_pad_length=100):
-    """Legacy function - use extract_audio_features instead"""
+    """Extract audio features for compatibility."""
     return extract_audio_features(path, target_length=max_pad_length, n_mfcc=40)
 
 def find_conv_layer(model, layer_name=None):
-    """Find convolutional layer for Grad-CAM"""
+    """Finds a convolutional layer for Grad-CAM.
+    
+    This function searches for a specified convolutional layer by its  name within
+    the provided model. If the layer name is not given,  it attempts to find the
+    last convolutional layer in the model.  If no such layer exists, it falls back
+    to any layer that contains  'conv' in its name. If no convolutional layer is
+    found, it  returns None.
+    
+    Args:
+        model: The model containing the layers to search through.
+        layer_name: Optional; the name of the specific layer to find.
+    """
     if layer_name:
         for layer in model.layers:
             if layer.name == layer_name:
@@ -409,7 +427,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name=None, pred_index
         return heatmap, "fallback"
 
 def save_and_overlay_gradcam(img_path, heatmap, cam_path, alpha=0.4):
-    """Save Grad-CAM visualization overlay"""
+    """Save Grad-CAM visualization overlay."""
     try:
         # Load original image
         img = cv2.imread(img_path)
@@ -451,9 +469,23 @@ def save_and_overlay_gradcam(img_path, heatmap, cam_path, alpha=0.4):
 # ----------------- Prediction Functions -----------------
 
 def predict_with_fixed_scaling(model, scaler, feature_columns, patient_data):
-    """Predict with proper clinical feature calculation"""
     
     # Calculate clinical features
+    """Predicts the likelihood of Alzheimer's disease based on clinical features.
+    
+    This function calculates various clinical features from the provided  patient
+    data, including age risk, MMSE severity, ADL impairment,  memory severity,
+    symptom burden, vascular risk, and family history  of Alzheimer's. It then
+    computes a clinical risk score using these  features, scales them, and uses the
+    provided model to predict the  probability of Alzheimer's disease.
+    
+    Args:
+        model: The trained model used for prediction.
+        scaler: The scaler used to standardize the feature values.
+        feature_columns: The list of feature names to be used for prediction.
+        patient_data: A dictionary containing patient-specific data for
+            feature calculation.
+    """
     features = {}
     
     # Basic features
@@ -514,7 +546,24 @@ def predict_with_fixed_scaling(model, scaler, feature_columns, patient_data):
 # ----------------- FIXED SHAP Analysis Functions -----------------
 
 def analyze_shap_factors(shap_values, feature_names, feature_values, top_n=5):
-    """Enhanced SHAP analysis to identify specific risk factors for Alzheimer's - FIXED VERSION"""
+    """Analyze SHAP factors to identify risk factors for Alzheimer's.
+    
+    This function processes SHAP values to determine the impact of various features
+    on the risk of Alzheimer's. It handles different formats of SHAP values,
+    ensures proper array shapes, and extracts the top contributing features based
+    on their impact. Additionally, it generates clinical insights by categorizing
+    features into risk-increasing and risk-decreasing factors.
+    
+    Args:
+        shap_values (list or np.ndarray): The SHAP values for the features.
+        feature_names (list): The names of the features corresponding to the SHAP values.
+        feature_values (list or np.ndarray): The values of the features.
+        top_n (int?): The number of top contributing factors to return. Defaults to 5.
+    
+    Returns:
+        tuple: A tuple containing a list of the top contributing factors and clinical
+            insights.
+    """
     if shap_values is None or len(shap_values) == 0:
         return [], "Insufficient data for detailed analysis"
     
@@ -717,7 +766,20 @@ def create_shap_summary_plot(shap_values, feature_array, feature_names, patient_
         return create_fallback_shap_plot(shap_values, feature_names, patient_id)
 
 def create_fallback_shap_plot(shap_values, feature_names, patient_id):
-    """Create fallback SHAP plot when summary plot fails"""
+    """Create a fallback SHAP plot when summary plot fails.
+    
+    This function generates a horizontal bar plot representing the mean absolute
+    SHAP values  for the most important features related to a specific patient. It
+    handles both single  SHAP value arrays and lists of SHAP values, ensuring that
+    the feature names and SHAP  values are aligned. The plot is saved as a PNG file
+    in the specified folder, and the  function returns the filename upon successful
+    creation.
+    
+    Args:
+        shap_values: The SHAP values for the features.
+        feature_names: The names of the features corresponding to the SHAP values.
+        patient_id: The identifier for the patient, used in the output filename.
+    """
     try:
         shap_text_file = f"{patient_id}_text_shap.png"
         shap_text_path = os.path.join(EXPLAINERS_FOLDER, shap_text_file)
@@ -764,7 +826,7 @@ def create_fallback_shap_plot(shap_values, feature_names, patient_id):
 # ----------------- Clinical Report Functions -----------------
 
 def get_risk_color(score):
-    """Return color based on risk score"""
+    """Return color based on risk score."""
     if score >= 0.7:
         return '🔴'  # High risk
     elif score >= 0.4:
@@ -773,7 +835,16 @@ def get_risk_color(score):
         return '🟢'  # Low risk
 
 def generate_risk_factors_report(top_features, fusion_score, feature_dict):
-    """Generate detailed risk factors report with proper structure"""
+    """def generate_risk_factors_report(top_features, fusion_score, feature_dict):
+    
+    Generate a detailed risk factors report with proper structure.  This function
+    analyzes the provided top features to identify high-impact  features based on
+    their SHAP values and constructs a list of risk factors.  It also evaluates the
+    fusion score to categorize the overall risk profile,  appending relevant risk
+    factors to the report based on the thresholds defined  for high and moderate
+    risk. The function utilizes the get_clinical_description  function to enrich
+    the report with clinical context for each feature.
+    """
     risk_factors = []
     
     # High impact features from SHAP
@@ -818,7 +889,7 @@ def generate_risk_factors_report(top_features, fusion_score, feature_dict):
     return risk_factors
 
 def get_clinical_description(feature_name, value):
-    """Get clinical description for risk factors"""
+    """Get clinical description for a given risk factor."""
     descriptions = {
         'Age': f'Advanced age ({value} years) - strongest non-modifiable risk factor',
         'MMSE': f'Cognitive screening score ({value}) - lower scores indicate impairment',
@@ -835,9 +906,29 @@ def get_clinical_description(feature_name, value):
     return descriptions.get(feature_name, f'Clinical risk factor ({feature_name})')
 
 def generate_clinical_summary(fusion_score, text_pred, image_pred, audio_pred, top_features, shap_insights, feature_dict):
-    """Generate clinical summary based on predictions and risk factors"""
     
     # Base risk assessment
+    """Generate a clinical summary based on predictions and risk factors.
+    
+    This function assesses the likelihood of Alzheimer's Disease using a fusion
+    score and integrates findings from text, imaging, and audio predictions. It
+    evaluates key risk factors derived from SHAP analysis and constructs a
+    comprehensive summary that includes urgency recommendations based on the
+    assessed risk level.
+    
+    Args:
+        fusion_score (float): A score indicating the probability of Alzheimer's Disease.
+        text_pred (str): Predictions from text analysis indicating clinical findings.
+        image_pred (list): Predictions from imaging analysis indicating neuroimaging features.
+        audio_pred (str): Predictions from audio analysis indicating speech characteristics.
+        top_features (list): A list of top risk factors identified from the analysis.
+        shap_insights (any): Insights from SHAP analysis (not used directly in summary).
+        feature_dict (dict): A dictionary containing feature values for risk assessment.
+    
+    Returns:
+        str: A comprehensive clinical summary based on the provided predictions and risk
+            factors.
+    """
     if fusion_score >= 0.7:
         base_summary = "HIGH PROBABILITY of Alzheimer's Disease. "
         urgency = "Urgent neurological evaluation recommended."
@@ -953,7 +1044,24 @@ def create_text_analysis_plots(feature_values, feature_names, shap_values, patie
     return plot_files
 
 def generate_recommendations(fusion_score, risk_factors, shap_insights):
-    """Generate recommendations with robust error handling"""
+    """Generate recommendations based on fusion score and risk factors.
+    
+    This function generates a list of recommendations tailored to the patient's
+    fusion score, categorizing them into urgent, priority, or routine actions. It
+    also attempts to provide additional recommendations based on the provided risk
+    factors, ensuring robust error handling to maintain functionality even when
+    unexpected input is encountered.
+    
+    Args:
+        fusion_score (float): A score indicating the urgency of recommendations.
+        risk_factors (list): A list of risk factors, where each factor is expected to be a dictionary
+            containing relevant features.
+        shap_insights (any): Insights from SHAP analysis, though not directly used in the current
+            implementation.
+    
+    Returns:
+        list: A list of recommendations based on the fusion score and risk factors.
+    """
     rec = []
     
     # Risk-level based recommendations (always work)
